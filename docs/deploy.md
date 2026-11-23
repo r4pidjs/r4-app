@@ -88,9 +88,10 @@ separate image build.
 ## Build cache
 
 The builder prewarms the debug typegen and release app dependency graphs with
-dummy bin targets before copying the application source. A source-only change
-reuses the compiled r4, deno, and V8 artifacts. The pnpm store and the Cargo
-registry and git checkouts use BuildKit cache mounts.
+dummy bin targets before copying the application source. It touches the real
+Rust sources after the copy so Cargo rebuilds the app and typegen. A
+source-only change reuses the compiled r4, deno, and V8 artifacts. The pnpm
+store and the Cargo registry and git checkouts use BuildKit cache mounts.
 
 ## Runtime layout
 

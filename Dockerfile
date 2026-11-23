@@ -71,6 +71,10 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
 
 COPY . .
 
+# The prewarm bins are placeholders. Touch the real Rust sources so Cargo
+# rebuilds the app and typegen instead of reusing the prewarm artifacts.
+RUN touch app/src/app.rs app/src/bin/app.rs app/src/bin/typegen.rs
+
 RUN --mount=type=cache,target=/root/.cargo/registry \
     --mount=type=cache,target=/root/.cargo/git \
     --mount=type=secret,id=github_repo_token,dst=/run/secrets/github_repo_token,required=true \
