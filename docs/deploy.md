@@ -43,8 +43,8 @@ check:
 | Health check path | `/healthz` |
 | Region | Singapore |
 
-`r4-app-canary` already exists. Create `r4-app-production` with the same
-settings.
+`r4-app-canary` and `r4-app-production` already exist. Both use the settings
+above.
 
 Each service needs two secret files:
 
@@ -74,13 +74,12 @@ Set these repository settings:
 
 | Name | Kind | Value |
 | --- | --- | --- |
-| `RENDER_IO_API_KEY` | secret in the `canary` environment | Render API key for the workspace |
+| `RENDER_IO_API_KEY` | repository secret | Render API key for the workspace |
 | `RENDER_CANARY_SERVICE_ID` | variable | Optional, defaults to the current canary ID |
-| `RENDER_PRODUCTION_SERVICE_ID` | variable | `r4-app-production` service ID |
+| `RENDER_PRODUCTION_SERVICE_ID` | variable | Optional, defaults to the current production service ID |
 
 The workflow skips with a warning when `RENDER_IO_API_KEY` is missing, so forks
-and unconfigured clones do not fail. A push to `main` fails when the production
-service ID is missing.
+and unconfigured clones do not fail.
 
 Render builds the Dockerfile for each deploy. The workflow does not run a
 separate image build.

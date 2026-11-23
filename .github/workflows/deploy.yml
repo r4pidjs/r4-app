@@ -16,7 +16,7 @@ jobs:
     env:
       RENDER_IO_API_KEY: ${{ secrets.RENDER_IO_API_KEY }}
       RENDER_CANARY_SERVICE_ID: ${{ vars.RENDER_CANARY_SERVICE_ID || 'srv-dc26o0bl550s739mlqhg' }}
-      RENDER_PRODUCTION_SERVICE_ID: ${{ vars.RENDER_PRODUCTION_SERVICE_ID }}
+      RENDER_PRODUCTION_SERVICE_ID: ${{ vars.RENDER_PRODUCTION_SERVICE_ID || 'srv-dc26ot2vcj2c739do61g' }}
       RENDER_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - name: Deploy the r4 app services
