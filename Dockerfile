@@ -42,19 +42,40 @@ RUN printf '%s\n' \
 
 WORKDIR /src
 
+COPY app/Cargo.toml app/Cargo.lock ./app/
+
+RUN mkdir -p app/src/bin \
+  && printf 'fn main() {}\n' > app/src/bin/app.rs \
+  && printf 'fn main() {}\n' > app/src/bin/typegen.rs
+
+RUN --mount=type=cache,target=/root/.cargo/registry \
+    --mount=type=cache,target=/root/.cargo/git \
+    --mount=type=secret,id=github_pkg_token,dst=/run/secrets/github_pkg_token,required=true \
+  cargo build --locked --manifest-path app/Cargo.toml --bin typegen
+
+RUN --mount=type=cache,target=/root/.cargo/registry \
+    --mount=type=cache,target=/root/.cargo/git \
+    --mount=type=secret,id=github_pkg_token,dst=/run/secrets/github_pkg_token,required=true \
+  cargo build --release --locked --manifest-path app/Cargo.toml --bin app
+
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-RUN --mount=type=secret,id=github_pkg_token,dst=/run/secrets/github_pkg_token,required=true \
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    --mount=type=secret,id=github_pkg_token,dst=/run/secrets/github_pkg_token,required=true \
   printf '//npm.pkg.github.com/:_authToken=%s\n' "$(tr -d '\r\n' < /run/secrets/github_pkg_token)" > /root/.npmrc \
   && pnpm install --frozen-lockfile --ignore-scripts \
   && rm -f /root/.npmrc
 
 COPY . .
 
-RUN --mount=type=secret,id=github_pkg_token,dst=/run/secrets/github_pkg_token,required=true \
+RUN --mount=type=cache,target=/root/.cargo/registry \
+    --mount=type=cache,target=/root/.cargo/git \
+    --mount=type=secret,id=github_pkg_token,dst=/run/secrets/github_pkg_token,required=true \
   pnpm build
 
-RUN --mount=type=secret,id=github_pkg_token,dst=/run/secrets/github_pkg_token,required=true \
+RUN --mount=type=cache,target=/root/.cargo/registry \
+    --mount=type=cache,target=/root/.cargo/git \
+    --mount=type=secret,id=github_pkg_token,dst=/run/secrets/github_pkg_token,required=true \
   cargo build --release --locked --manifest-path app/Cargo.toml --bin app \
   && strip target/release/app
 

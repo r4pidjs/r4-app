@@ -46,12 +46,39 @@ secret files to Docker builds as BuildKit secrets. The Dockerfile reads
 the token from `/run/secrets/github_pkg_token` for pnpm and the cargo git
 fetch.
 
-Keep auto-deploy off if you want to promote after the canary passes. The
-existing canary service has auto-deploy off, so trigger a deploy from the
-dashboard after merging.
+The `Deploy` workflow triggers deploys through the Render API. Auto-deploy
+stays off so the workflow controls when each service builds.
 
 The free plan has 512 MB of memory. The image sets `R4_RENDER_WORKERS=1`
 to keep one V8 renderer worker.
+
+## GitHub Actions
+
+`.github/workflows/deploy.yml` triggers Render deploys. A pull request deploys
+its head commit to `r4-app-canary`. A push to `main` deploys the commit to the
+canary and then production. The job waits for each deploy to go live.
+
+Set these repository settings:
+
+| Name | Kind | Value |
+| --- | --- | --- |
+| `RENDER_IO_API_KEY` | secret in the `canary` environment | Render API key for the workspace |
+| `RENDER_CANARY_SERVICE_ID` | variable | Optional, defaults to the current canary ID |
+| `RENDER_PRODUCTION_SERVICE_ID` | variable | `r4-app-production` service ID |
+
+The workflow skips with a warning when `RENDER_IO_API_KEY` is missing, so forks
+and unconfigured clones do not fail. A push to `main` fails when the production
+service ID is missing.
+
+Render builds the Dockerfile for each deploy. The workflow does not run a
+separate image build.
+
+## Build cache
+
+The builder prewarms the debug typegen and release app dependency graphs with
+dummy bin targets before copying the application source. A source-only change
+reuses the compiled r4, deno, and V8 artifacts. The pnpm store and the Cargo
+registry and git checkouts use BuildKit cache mounts.
 
 ## Runtime layout
 

@@ -108,6 +108,9 @@ Both suites start their own server (`/api/health` on the configured port), so no
 GitHub Packages token as the BuildKit secret `github_pkg_token`. The
 runtime image binds `0.0.0.0:10000` and Render checks `/healthz`.
 
+`.github/workflows/deploy.yml` deploys pull request commits to the canary and
+main commits to the canary and production.
+
 See [docs/deploy.md](docs/deploy.md) for the local build, the Render
 secret file, and the `r4-app-canary` and `r4-app-production` settings.
 
