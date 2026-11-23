@@ -133,6 +133,31 @@ test("fingerprinted assets are immutable", async () => {
   );
 });
 
+test("the router and route manifest are versioned and immutable", async () => {
+  const html = await (await fetch(BASE + "/")).text();
+  const router = /src="(\/__r4\/router\.[0-9a-f]{16}\.js)"/.exec(html)?.[1];
+  const routes = /data-routes="(\/routes\.[0-9a-f]{16}\.json)"/.exec(html)?.[1];
+
+  assert.ok(router, "the document links the versioned router");
+  assert.ok(routes, "the document links the versioned manifest");
+
+  for (const path of [router, routes]) {
+    const response = await fetch(BASE + path);
+
+    assert.equal(response.status, 200, path);
+    assert.equal(
+      response.headers.get("cache-control"),
+      "public, max-age=31536000, immutable",
+      path,
+    );
+  }
+
+  const stable = await fetch(BASE + "/__r4/router.js");
+
+  assert.equal(stable.status, 200);
+  assert.equal(stable.headers.get("cache-control"), "no-cache");
+});
+
 test("the stylesheet is served through the asset server", async () => {
   const html = await (await fetch(BASE + "/")).text();
   const href = /<link rel="stylesheet" href="([^"]+)"/.exec(html)?.[1];
@@ -207,13 +232,15 @@ test("the html assigns a stable root and hydratable islands", async () => {
   assert.match(html, /data-island="counter" data-props="\{&quot;start&quot;:0\}"/);
   assert.match(html, /<script type="importmap">/);
 
-  const router = /<script type="module" src="\/__r4\/router\.js"[^>]*>/.exec(html)?.[0];
+  const router =
+    /<script type="module" src="\/__r4\/router\.[0-9a-f]{16}\.js"[^>]*>/.exec(html)?.[0];
 
-  assert.ok(router, "the layout loads the framework router");
+  assert.ok(router, "the layout loads the versioned framework router");
   assert.match(router, /data-r4-router=""/);
   assert.match(
     router,
     /data-islands="\/__assets\/web\/\.generated\/islands-client\.[0-9a-f]{16}\.js"/,
   );
+  assert.match(router, /data-routes="\/routes\.[0-9a-f]{16}\.json"/);
   assert.match(router, /data-preload="none"/);
 });

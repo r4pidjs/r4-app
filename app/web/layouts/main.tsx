@@ -4,6 +4,7 @@ export type MainProps = {
   dev: boolean;
   importMap: string;
   router: string;
+  routes: string;
   islands: string;
   stylesheets: string[];
   title: string;
@@ -14,6 +15,7 @@ export function Main({
   dev,
   importMap,
   router,
+  routes,
   islands,
   stylesheets,
   title,
@@ -36,15 +38,18 @@ export function Main({
           <link key={href} rel="stylesheet" href={href} />
         ))}
         {/*
-          The framework ships the client router at ROUTER_PATH. It marks the
-          script with data-r4-router and reads the generated island registry
-          from data-islands to hydrate markers after each navigation.
+          Rust passes the router URL and the route manifest URL. Production
+          uses the content-versioned module and manifest, development uses the
+          stable paths. The script marks itself with data-r4-router, reads the
+          island registry from data-islands, and the manifest from data-routes
+          so a navigation does not fetch /routes.json.
         */}
         <script
           type="module"
           src={router}
           data-r4-router=""
           data-islands={islands}
+          data-routes={routes}
           data-preload="none"
         />
         {dev ? <script src="/__r4/dev.js" /> : null}

@@ -56,13 +56,15 @@ The CLI supervisor rebuilds Rust, regenerates views, reruns the web asset build,
 | --- | --- |
 | `/` | Rust-rendered home page with the counter and BFF islands |
 | `/about` | Second page through the same layout |
-| `/routes.json` | Generated route manifest used by client navigation |
+| `/routes.json`, `/routes.<hash>.json` | Generated route manifest used by client navigation |
 | `/stream` | React streaming through V8, forwarded chunk by chunk |
 | `/_rpc/bff.greet` | Typed RPC with generated `.r4/rpc.ts` bindings |
-| `/__r4/router.js` | Framework client router used for navigation and island hydration |
+| `/__r4/router.js`, `/__r4/router.<hash>.js` | Framework client router used for navigation and island hydration |
 | `/__assets/*` | Asset server: compiled TSX, CSS, React modules |
 | `/icon.svg`, `/logo.svg`, `/favicon.ico`, `/apple-touch-icon.png` | Embedded brand assets, served without the renderer |
 | `/missing` | 404 page through the layout |
+
+Production pages link the versioned router and manifest, which the server marks `public, max-age=31536000, immutable`. The stable paths stay available with `no-cache` and an ETag, so a page cached before a deploy revalidates instead of downloading the body again. Development uses the stable paths.
 
 ## BFF endpoints
 

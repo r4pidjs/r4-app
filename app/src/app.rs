@@ -13,7 +13,8 @@ use serde::{Deserialize, Serialize};
 use r4::app::routes::{routes, RoutesExt};
 use r4::app::rpc::{rpc, RpcError, RpcRouter};
 use r4::app::{
-  app_with_state_and, islands_url, AppState, AssetServer, Cache, CspPolicy, Page, ROUTER_PATH,
+  app_with_state_and, islands_url, router_url, routes_url, AppState, AssetServer, Cache,
+  CspPolicy, Page,
 };
 use ts_rs::TS;
 
@@ -41,6 +42,7 @@ pub struct MainProps {
   #[serde(rename = "importMap")]
   pub import_map: String,
   pub router: String,
+  pub routes: String,
   pub islands: String,
   pub stylesheets: Vec<String>,
   pub title: String,
@@ -75,11 +77,13 @@ fn asset_server(state: &AppState) -> AssetServer {
 
 fn layout_props(state: &AppState, title: impl Into<String>) -> MainProps {
   let assets = asset_server(state);
+  let dev = state.dev();
 
   MainProps {
-    dev: state.dev(),
+    dev,
     import_map: shared_import_map(&assets),
-    router: ROUTER_PATH.to_owned(),
+    router: router_url(dev),
+    routes: routes_url(state),
     islands: islands_url(&assets),
     stylesheets: assets.stylesheets("/__assets"),
     title: title.into(),
