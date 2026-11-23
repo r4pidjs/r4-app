@@ -46,8 +46,20 @@ pub struct MainProps {
   pub title: String,
 }
 
+/* Prefer the crate directory during development. Containers have no source
+ * tree at the build path, so fall back to the working directory copied into
+ * the image. */
 fn app_root() -> PathBuf {
-  PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+  let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+  let candidates = [manifest, PathBuf::from(".")];
+
+  for candidate in candidates {
+    if candidate.join("web/pages").is_dir() && candidate.join("web/layouts").is_dir() {
+      return candidate;
+    }
+  }
+
+  PathBuf::from(".")
 }
 
 /* The import map compiles every asset under the app root, so build it once. */

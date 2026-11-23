@@ -74,6 +74,13 @@ test("health reports status, version, and uptime", async () => {
   assert.equal(typeof body.timestamp, "number");
 });
 
+test("the platform health check responds", async () => {
+  const response = await fetch(BASE + "/healthz");
+
+  assert.equal(response.status, 200);
+  assert.ok((await response.text()).length > 0);
+});
+
 test("metrics report the renderer and cache counters", async () => {
   const response = await fetch(BASE + "/api/metrics");
   const body = await response.json();

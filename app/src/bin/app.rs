@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -16,6 +16,15 @@ fn path_from_env(name: &str, fallback: PathBuf) -> PathBuf {
   std::env::var_os(name)
     .map(PathBuf::from)
     .unwrap_or(fallback)
+}
+
+fn bind_address(host: Option<&str>, port: u16) -> anyhow::Result<SocketAddr> {
+  let host = host.unwrap_or("127.0.0.1");
+  let ip: IpAddr = host
+    .parse()
+    .map_err(|_| anyhow::anyhow!("invalid HOST value: {host}"))?;
+
+  Ok(SocketAddr::new(ip, port))
 }
 
 #[tokio::main]
@@ -66,7 +75,8 @@ async fn main() -> anyhow::Result<()> {
     .ok()
     .and_then(|value| value.parse::<u16>().ok())
     .unwrap_or(3002);
-  let address = SocketAddr::from(([127, 0, 0, 1], port));
+  let host = std::env::var("HOST").ok();
+  let address = bind_address(host.as_deref(), port)?;
   let listener = TcpListener::bind(address).await?;
 
   println!("r4 app listening on http://{address}");
@@ -74,4 +84,31 @@ async fn main() -> anyhow::Result<()> {
   axum::serve(listener, app::router(state)).await?;
 
   Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+  use super::bind_address;
+  use std::net::SocketAddr;
+
+  #[test]
+  fn defaults_to_loopback() {
+    assert_eq!(
+      bind_address(None, 3002).expect("default address"),
+      SocketAddr::from(([127, 0, 0, 1], 3002))
+    );
+  }
+
+  #[test]
+  fn accepts_a_container_host() {
+    assert_eq!(
+      bind_address(Some("0.0.0.0"), 10000).expect("container address"),
+      SocketAddr::from(([0, 0, 0, 0], 10000))
+    );
+  }
+
+  #[test]
+  fn rejects_a_hostname() {
+    assert!(bind_address(Some("localhost"), 3002).is_err());
+  }
 }
