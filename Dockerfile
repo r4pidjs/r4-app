@@ -69,6 +69,9 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
   && pnpm install --frozen-lockfile --ignore-scripts \
   && rm -f /root/.npmrc
 
+RUN cp "$(find node_modules -path '*/@r4pidjs/r4-linux-x64/bin/snapshot.bin' -print -quit)" /src/snapshot.bin \
+  && test -s /src/snapshot.bin
+
 COPY . .
 
 # The prewarm bins are placeholders. Touch the real Rust sources so Cargo
@@ -102,6 +105,7 @@ ENV HOST=0.0.0.0 \
 WORKDIR /app
 
 COPY --from=builder /src/target/release/app /app/app
+COPY --from=builder /src/snapshot.bin /app/snapshot.bin
 COPY --from=builder /src/app/bundle.js /app/bundle.js
 COPY --from=builder /src/app/npm /app/npm
 COPY --from=builder /src/app/web /app/web

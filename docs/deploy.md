@@ -95,7 +95,8 @@ store and the Cargo registry and git checkouts use BuildKit cache mounts.
 
 ## Runtime layout
 
-The image copies the binary, `bundle.js`, `npm/`, and `web/` into `/app`.
-The binary reads `bundle.js` and `web/assets/manifest.json` from its
-working directory. At runtime `app_root()` falls back to the working
+The image copies the binary, `snapshot.bin`, `bundle.js`, `npm/`, and
+`web/` into `/app`. The binary starts V8 from `snapshot.bin` beside it and
+reads `bundle.js` and `web/assets/manifest.json` from its working
+directory. At runtime `app_root()` falls back to the working
 directory when the build-time crate path is absent.
