@@ -1,9 +1,12 @@
 # Build the app for Render and serve it from a slim runtime image.
 #
-# The build needs a GitHub Packages token as a BuildKit secret named
-# github_pkg_token. Render mounts the service secret file with that id.
-# Locally:
-#   docker build --secret id=github_pkg_token,src=/tmp/github_pkg_token .
+# The build needs two BuildKit secrets:
+#   github_pkg_token: a classic GitHub token with read:packages for pnpm
+#   github_repo_token: a GitHub token with repo for the private r4 tag
+# Render mounts the service secret files with the same names. Locally:
+#   docker build \
+#     --secret id=github_pkg_token,src=/tmp/github_pkg_token \
+#     --secret id=github_repo_token,src=/tmp/github_repo_token .
 
 FROM node:26-bookworm AS builder
 
@@ -35,7 +38,7 @@ RUN printf '%s\n' \
   '#!/bin/sh' \
   'case "$1" in' \
   '  *Username*) printf "%s\n" "x-access-token" ;;' \
-  '  *Password*) tr -d "\r\n" < /run/secrets/github_pkg_token ;;' \
+  '  *Password*) tr -d "\r\n" < /run/secrets/github_repo_token ;;' \
   'esac' \
   > /usr/local/bin/git-askpass \
   && chmod +x /usr/local/bin/git-askpass
@@ -50,12 +53,12 @@ RUN mkdir -p app/src/bin \
 
 RUN --mount=type=cache,target=/root/.cargo/registry \
     --mount=type=cache,target=/root/.cargo/git \
-    --mount=type=secret,id=github_pkg_token,dst=/run/secrets/github_pkg_token,required=true \
+    --mount=type=secret,id=github_repo_token,dst=/run/secrets/github_repo_token,required=true \
   cargo build --locked --manifest-path app/Cargo.toml --bin typegen
 
 RUN --mount=type=cache,target=/root/.cargo/registry \
     --mount=type=cache,target=/root/.cargo/git \
-    --mount=type=secret,id=github_pkg_token,dst=/run/secrets/github_pkg_token,required=true \
+    --mount=type=secret,id=github_repo_token,dst=/run/secrets/github_repo_token,required=true \
   cargo build --release --locked --manifest-path app/Cargo.toml --bin app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -70,12 +73,12 @@ COPY . .
 
 RUN --mount=type=cache,target=/root/.cargo/registry \
     --mount=type=cache,target=/root/.cargo/git \
-    --mount=type=secret,id=github_pkg_token,dst=/run/secrets/github_pkg_token,required=true \
+    --mount=type=secret,id=github_repo_token,dst=/run/secrets/github_repo_token,required=true \
   pnpm build
 
 RUN --mount=type=cache,target=/root/.cargo/registry \
     --mount=type=cache,target=/root/.cargo/git \
-    --mount=type=secret,id=github_pkg_token,dst=/run/secrets/github_pkg_token,required=true \
+    --mount=type=secret,id=github_repo_token,dst=/run/secrets/github_repo_token,required=true \
   cargo build --release --locked --manifest-path app/Cargo.toml --bin app \
   && strip target/release/app
 

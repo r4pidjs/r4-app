@@ -20,5 +20,6 @@ screenshots
 .env.*
 .npmrc
 github_pkg_token
+github_repo_token
 tests
 docs

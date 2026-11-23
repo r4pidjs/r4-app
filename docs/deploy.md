@@ -5,14 +5,20 @@ runtime binds `0.0.0.0:10000` and Render checks `/healthz`.
 
 ## Build the image locally
 
-The install and Rust build steps read a GitHub Packages token from the
-BuildKit secret `github_pkg_token`. The token needs `repo` and
-`read:packages`.
+The install step reads a GitHub Packages token from the BuildKit secret
+`github_pkg_token`. The token needs `read:packages`. The Rust build reads
+the repository token from `github_repo_token`. That token needs `repo` to
+fetch the private r4 tag. One classic token with both scopes can fill both
+files.
 
 ```sh
 printf '%s' "$GITHUB_PKG_TOKEN" > /tmp/github_pkg_token
-docker build --secret id=github_pkg_token,src=/tmp/github_pkg_token -t r4-app .
-rm /tmp/github_pkg_token
+printf '%s' "$GITHUB_REPO_TOKEN" > /tmp/github_repo_token
+docker build \
+  --secret id=github_pkg_token,src=/tmp/github_pkg_token \
+  --secret id=github_repo_token,src=/tmp/github_repo_token \
+  -t r4-app .
+rm /tmp/github_pkg_token /tmp/github_repo_token
 ```
 
 Run it:
@@ -40,11 +46,17 @@ check:
 `r4-app-canary` already exists. Create `r4-app-production` with the same
 settings.
 
-Each service needs a secret file named `github_pkg_token` that contains a
-classic GitHub token with `repo` and `read:packages`. Render exposes
+Each service needs two secret files:
+
+| File | Token scope |
+| --- | --- |
+| `github_pkg_token` | `read:packages` for `pnpm install` |
+| `github_repo_token` | `repo` for the private r4 git tag |
+
+One classic token with both scopes can fill both files. Render exposes
 secret files to Docker builds as BuildKit secrets. The Dockerfile reads
-the token from `/run/secrets/github_pkg_token` for pnpm and the cargo git
-fetch.
+them from `/run/secrets/github_pkg_token` and
+`/run/secrets/github_repo_token`.
 
 The `Deploy` workflow triggers deploys through the Render API. Auto-deploy
 stays off so the workflow controls when each service builds.
