@@ -88,7 +88,7 @@ curl -X POST http://127.0.0.1:3000/api/echo \
 ## Tests
 
 ```sh
-pnpm test          # 21 HTTP tests, 1 dev-supervisor test, codegen drift checks
+pnpm test          # 22 HTTP tests, 1 dev-supervisor test, codegen drift checks
 pnpm test:vrt      # 8 Playwright tests: 4 snapshots, 3 behavior, 1 e2e flow
 ```
 
