@@ -75,8 +75,11 @@ Set these repository settings:
 | Name | Kind | Value |
 | --- | --- | --- |
 | `RENDER_IO_API_KEY` | repository secret | Render API key for the workspace |
-| `RENDER_CANARY_SERVICE_ID` | variable | Optional, defaults to the current canary ID |
-| `RENDER_PRODUCTION_SERVICE_ID` | variable | Optional, defaults to the current production service ID |
+| `RENDER_CANARY_SERVICE_ID` | variable | `r4-app-canary` service ID |
+| `RENDER_PRODUCTION_SERVICE_ID` | variable | `r4-app-production` service ID |
+
+Both service ID variables are required. The deploy step exits when the canary
+ID is missing, or when the production ID is missing on a push to `main`.
 
 The workflow skips with a warning when `RENDER_IO_API_KEY` is missing, so forks
 and unconfigured clones do not fail.
