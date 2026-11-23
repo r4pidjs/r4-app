@@ -13,8 +13,8 @@ use serde::{Deserialize, Serialize};
 use r4::app::routes::{routes, RoutesExt};
 use r4::app::rpc::{rpc, RpcError, RpcRouter};
 use r4::app::{
-  app_with_state_and, islands_url, router_url, routes_url, AppState, AssetServer, Cache,
-  CspPolicy, Page,
+  app_with_state_and, islands_url, router_url, routes_url, AppState, AssetServer, Cache, CspPolicy,
+  Page,
 };
 use ts_rs::TS;
 
