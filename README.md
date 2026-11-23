@@ -21,6 +21,8 @@ app/                       the r4 app root
 tests/
   http.test.mjs            page and endpoint assertions
   vrt/                     Playwright visual and behavior tests
+Dockerfile                 multi-stage image for Render
+docs/deploy.md             canary and production deployment
 ```
 
 The app root is `app/`, not the repository root: r4's asset server walks the app root to build the import map, so it must not contain `node_modules`, `target`, or the cargo cache. `app/.cargo/config.toml` keeps the Rust build in the repository-level `target/` for that reason.
@@ -29,12 +31,12 @@ The brand assets are embedded with `include_bytes!`, so the binary serves them w
 
 ## Setup
 
-Use Node.js 26 or later and pnpm. `@r4pidjs/r4` is published to GitHub Packages: add `//npm.pkg.github.com/:_authToken=${GITHUB_PKG_TOKEN}` to your user-level `~/.npmrc` and set `GITHUB_PKG_TOKEN` to a classic token with `read:packages`.
+Use Node.js 26 or later and pnpm. `@r4pidjs/r4` is published to GitHub Packages: add `//npm.pkg.github.com/:_authToken=${GITHUB_PKG_TOKEN}` to your user-level `~/.npmrc` and set `GITHUB_PKG_TOKEN` to a classic token with `repo` and `read:packages`.
 
 ```sh
 pnpm install
 pnpm build
-cargo build --manifest-path app/Cargo.toml --bin app
+CARGO_TARGET_DIR=target cargo build --manifest-path app/Cargo.toml --bin app
 pnpm start        # http://127.0.0.1:3000
 ```
 
@@ -84,7 +86,7 @@ curl -X POST http://127.0.0.1:3000/api/echo \
 ## Tests
 
 ```sh
-pnpm test          # 20 HTTP tests, 1 dev-supervisor test, codegen drift checks
+pnpm test          # 21 HTTP tests, 1 dev-supervisor test, codegen drift checks
 pnpm test:vrt      # 8 Playwright tests: 4 snapshots, 3 behavior, 1 e2e flow
 ```
 
@@ -100,6 +102,18 @@ pnpm test:vrt:update
 
 Both suites start their own server (`/api/health` on the configured port), so nothing needs to be running first. Stop `pnpm dev` before running them: the dev supervisor watches the same app root and can race with the suites on `views.rs` and the cargo target lock.
 
+## Deploy
+
+`Dockerfile` builds a multi-stage image for Render. The build needs a
+GitHub Packages token as the BuildKit secret `github_pkg_token`. The
+runtime image binds `0.0.0.0:10000` and Render checks `/healthz`.
+
+`.github/workflows/deploy.yml` deploys pull request commits to the canary and
+main commits to the canary and production.
+
+See [docs/deploy.md](docs/deploy.md) for the local build, the Render
+secret file, and the `r4-app-canary` and `r4-app-production` settings.
+
 ## Pinning r4
 
 `app/Cargo.toml` depends on the runtime as a git tag, matching the published CLI:
@@ -108,4 +122,4 @@ Both suites start their own server (`/api/health` on the configured port), so no
 r4 = { git = "https://github.com/r4pidjs/r4", tag = "v0.0.1-alpha.2" }
 ```
 
-The repository is public, so cargo fetches it without a token; `GITHUB_PKG_TOKEN` is only needed for `pnpm install`.
+The repository is private. The same token with `repo` scope lets cargo fetch the tag, and `read:packages` lets pnpm install the CLI.

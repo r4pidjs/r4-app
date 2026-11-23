@@ -1,0 +1,112 @@
+name: Deploy
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    environment: canary
+    env:
+      RENDER_IO_API_KEY: ${{ secrets.RENDER_IO_API_KEY }}
+      RENDER_CANARY_SERVICE_ID: ${{ vars.RENDER_CANARY_SERVICE_ID }}
+      RENDER_PRODUCTION_SERVICE_ID: ${{ vars.RENDER_PRODUCTION_SERVICE_ID }}
+      RENDER_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - name: Deploy the r4 app services
+        run: |
+          set -euo pipefail
+
+          if [ -z "${RENDER_IO_API_KEY}" ]; then
+            echo "::warning::RENDER_IO_API_KEY is not set. Skipping the Render deploy."
+            exit 0
+          fi
+
+          if [ -z "${RENDER_CANARY_SERVICE_ID}" ]; then
+            echo "RENDER_CANARY_SERVICE_ID is not set." >&2
+            exit 1
+          fi
+
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+            services="${RENDER_CANARY_SERVICE_ID}"
+          else
+            if [ -z "${RENDER_PRODUCTION_SERVICE_ID}" ]; then
+              echo "RENDER_PRODUCTION_SERVICE_ID is not set. Create r4-app-production and set the repository variable." >&2
+              exit 1
+            fi
+
+            services="${RENDER_CANARY_SERVICE_ID} ${RENDER_PRODUCTION_SERVICE_ID}"
+          fi
+
+          deploy() {
+            service_id="$1"
+
+            code=$(curl --silent --show-error \
+              --output /tmp/render-deploy-create.json \
+              --write-out '%{http_code}' \
+              --request POST \
+              --header "Authorization: Bearer ${RENDER_IO_API_KEY}" \
+              --header "Content-Type: application/json" \
+              --data "{\"commitId\":\"${RENDER_COMMIT}\"}" \
+              "https://api.render.com/v1/services/${service_id}/deploys")
+            case "${code}" in
+              201|202) ;;
+              *)
+                cat /tmp/render-deploy-create.json >&2
+                echo "Render deploy request for ${service_id} failed with HTTP ${code}." >&2
+                exit 1
+                ;;
+            esac
+
+            deploy_id=""
+            if [ "${code}" = "201" ]; then
+              deploy_id=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["id"])' /tmp/render-deploy-create.json)
+            else
+              for attempt in $(seq 1 30); do
+                curl --fail --silent --show-error \
+                  --header "Authorization: Bearer ${RENDER_IO_API_KEY}" \
+                  --output /tmp/render-deploys.json \
+                  "https://api.render.com/v1/services/${service_id}/deploys?limit=10"
+                deploy_id=$(python3 -c 'import json, sys; ref = sys.argv[1]; items = json.load(open(sys.argv[2])); print(next((item.get("deploy", item).get("id") for item in items if (item.get("deploy", item).get("commit") or {}).get("id") == ref), ""))' "${RENDER_COMMIT}" /tmp/render-deploys.json)
+                if [ -n "${deploy_id}" ]; then
+                  break
+                fi
+
+                sleep 10
+              done
+            fi
+
+            if [ -z "${deploy_id}" ]; then
+              echo "Render did not queue a deploy for ${RENDER_COMMIT} on ${service_id}." >&2
+              exit 1
+            fi
+
+            echo "Render deploy for ${service_id}: ${deploy_id}"
+
+            for attempt in $(seq 1 120); do
+              current=$(curl --fail --silent --show-error \
+                --header "Authorization: Bearer ${RENDER_IO_API_KEY}" \
+                "https://api.render.com/v1/services/${service_id}/deploys/${deploy_id}")
+              status=$(printf '%s' "${current}" | python3 -c 'import json, sys; print(json.load(sys.stdin)["status"])')
+              echo "Render deploy status for ${service_id}: ${status}"
+              case "${status}" in
+                live) return 0 ;;
+                *failed|canceled|deactivated) return 1 ;;
+              esac
+
+              sleep 20
+            done
+
+            echo "Timed out waiting for the Render deploy on ${service_id}." >&2
+            return 1
+          }
+
+          for service_id in ${services}; do
+            deploy "${service_id}" || exit 1
+          done
