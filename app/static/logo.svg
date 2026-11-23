@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 236 56" role="img" aria-label="R4 + React">
+  <defs>
+    <linearGradient id="r4-gradient" x1="7" y1="2" x2="51" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2563eb"/>
+      <stop offset="0.55" stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#06b6d4"/>
+    </linearGradient>
+  </defs>
+  <rect width="56" height="56" rx="14" fill="url(#r4-gradient)"/>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="1.6">
+    <ellipse cx="28" cy="28" rx="17.5" ry="6.6" transform="rotate(-30 28 28)"/>
+    <ellipse cx="28" cy="28" rx="17.5" ry="6.6" transform="rotate(30 28 28)"/>
+  </g>
+  <text x="28" y="30" text-anchor="middle" dominant-baseline="central" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="800" letter-spacing="-1.2" fill="#ffffff">r4</text>
+  <text x="70" y="38" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="27" font-weight="800" letter-spacing="-0.6" fill="#111827">R4<tspan font-weight="500" fill="#6b7280" letter-spacing="0"> + React</tspan></text>
+</svg>

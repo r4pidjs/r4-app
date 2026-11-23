@@ -1,0 +1,36 @@
+{
+  "name": "test-r4-app",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "build": "pnpm build:views && r4 build --root app",
+    "build:views": "node scripts/views.mjs",
+    "brand": "node scripts/brand.mjs",
+    "build:app": "pnpm build:views && CARGO_TARGET_DIR=target cargo build --manifest-path app/Cargo.toml --bin app",
+    "start": "r4 start --root app --port 3000",
+    "dev": "r4 dev --root app --port 3000",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/http.test.mjs tests/features.test.mjs && pnpm test:dev && pnpm test:codegen",
+    "test:dev": "node --test tests/dev.test.mjs",
+    "test:codegen": "node scripts/views.mjs --check && CARGO_TARGET_DIR=target cargo run --manifest-path app/Cargo.toml --bin typegen -- --root app --check",
+    "test:vrt": "playwright test",
+    "test:vrt:update": "playwright test --update-snapshots"
+  },
+  "dependencies": {
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.0",
+    "@r4pidjs/r4": "0.0.1-alpha.2",
+    "@types/node": "^26.0.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "playwright": "1.65.0",
+    "rolldown": "1.3.2",
+    "typescript": "7.0.2"
+  }
+}

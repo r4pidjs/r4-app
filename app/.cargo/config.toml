@@ -1,0 +1,4 @@
+# Keep the Rust build out of the app root: r4's asset server walks the app root
+# to build the import map, so target/ there would be scanned on every render.
+[build]
+target-dir = "../target"

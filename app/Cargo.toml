@@ -1,0 +1,27 @@
+[package]
+name = "test-r4-app"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "app"
+path = "src/bin/app.rs"
+
+[[bin]]
+name = "typegen"
+path = "src/bin/typegen.rs"
+
+[dependencies]
+anyhow = "=1.0.104"
+axum = "=0.8.9"
+r4 = { git = "https://github.com/r4pidjs/r4", tag = "v0.0.1-alpha.2" }
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.154"
+ts-rs = "=12.0.1"
+tokio = { version = "=1.54.1", features = ["macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3

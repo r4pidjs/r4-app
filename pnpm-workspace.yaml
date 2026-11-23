@@ -1,0 +1,6 @@
+minimumReleaseAgeExclude:
+  - '@r4pidjs/r4-darwin-arm64@0.0.1-alpha.2'
+  - '@r4pidjs/r4-linux-x64@0.0.1-alpha.2'
+  - '@r4pidjs/r4@0.0.1-alpha.2'
+registries:
+  '@r4pidjs': https://npm.pkg.github.com/
