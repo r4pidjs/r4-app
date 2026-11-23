@@ -97,8 +97,15 @@ store and the Cargo registry and git checkouts use BuildKit cache mounts.
 
 ## Runtime layout
 
-The image copies the binary, `snapshot.bin`, `bundle.js`, `npm/`, and
-`web/` into `/app`. The binary starts V8 from `snapshot.bin` beside it and
-reads `bundle.js` and `web/assets/manifest.json` from its working
-directory. At runtime `app_root()` falls back to the working
-directory when the build-time crate path is absent.
+The image copies the binary, `snapshot.bin`, `bundle.js`, `npm/`, `.r4/`,
+and `web/` into `/app`. The binary starts V8 from `snapshot.bin` beside it
+and reads `bundle.js` and `web/assets/manifest.json` from its working
+directory. At runtime `app_root()` falls back to the working directory when
+the build-time crate path is absent.
+
+The asset server indexes that working directory to build the import map, so
+the generated `.r4/` client ships beside `web/`. `app/web/rpc.ts` re-exports
+`../.r4/rpc`, and without the file the map has no entry for the specifier.
+The browser then requests `/__assets/.r4/rpc` itself, which the asset route
+answers with 404, so every island that imports the typed RPC fails to
+hydrate.
