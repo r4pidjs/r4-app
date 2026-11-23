@@ -108,6 +108,11 @@ COPY --from=builder /src/target/release/app /app/app
 COPY --from=builder /src/snapshot.bin /app/snapshot.bin
 COPY --from=builder /src/app/bundle.js /app/bundle.js
 COPY --from=builder /src/app/npm /app/npm
+
+# The asset server indexes the app root, so the generated .r4 client ships
+# beside web/. Without it web/rpc.ts re-exports a module the import map never
+# lists, and every island that imports the typed RPC fails to hydrate.
+COPY --from=builder /src/app/.r4 /app/.r4
 COPY --from=builder /src/app/web /app/web
 
 USER r4
